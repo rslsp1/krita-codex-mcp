@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krita document preview</title>
+  <style>
+    :root { color-scheme: light dark; font: 14px system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 12px; color: var(--color-text-primary, CanvasText);
+      background: var(--color-background-primary, Canvas); }
+    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    h1 { font-size: 16px; margin: 0; overflow-wrap: anywhere; flex: 1; }
+    button { font: inherit; padding: 8px 14px; min-height: 44px; cursor: pointer; }
+    button:disabled { cursor: wait; }
+    #status { margin: 8px 0; min-height: 1.4em; overflow-wrap: anywhere; }
+    #status[data-error="true"] { color: var(--color-text-danger, #c44); }
+    figure { margin: 0; padding: 8px; border: 1px solid #8886; border-radius: 8px;
+      background: repeating-conic-gradient(#8882 0% 25%, transparent 0% 50%) 0 / 20px 20px;
+      text-align: center; }
+    img { display: block; max-width: 100%; max-height: 65vh; width: auto;
+      height: auto; margin: auto; object-fit: contain; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header><h1 id="title">Krita document preview</h1>
+    <button id="refresh" type="button" disabled>Refresh</button></header>
+  <p id="status" role="status" aria-live="polite">Connecting to preview…</p>
+  <figure id="canvas" hidden><img id="preview" alt="Krita document preview"></figure>
+  <script>
+  (() => {
+    "use strict";
+    const title = document.getElementById("title");
+    const status = document.getElementById("status");
+    const button = document.getElementById("refresh");
+    const canvas = document.getElementById("canvas");
+    const preview = document.getElementById("preview");
+    const pending = new Map();
+    const argumentNames = ["max_width", "max_height", "document_id", "x", "y", "width", "height", "scale"];
+    let args = {};
+    let nextId = 0;
+    let connected = false;
+    let busy = false;
+    let canRefresh = false;
+    let resizeObserver;
+
+    function send(message) { window.parent.postMessage({ jsonrpc: "2.0", ...message }, "*"); }
+    function notify(method, params = {}) { send({ method, params }); }
+    function request(method, params) {
+      return new Promise((resolve, reject) => {
+        const id = ++nextId;
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error("Preview request timed out. You can retry with Refresh."));
+        }, 45000);
+        pending.set(id, { resolve, reject, timer });
+        send({ id, method, params });
+      });
+    }
+    function message(text, error = false) {
+      status.textContent = text;
+      status.dataset.error = String(error);
+    }
+    function setArguments(input) {
+      args = Object.fromEntries(argumentNames.filter(k => input[k] !== undefined).map(k => [k, input[k]]));
+    }
+    function hostContext(context = {}) {
+      if (context.theme === "light" || context.theme === "dark") {
+        document.documentElement.style.colorScheme = context.theme;
+      }
+    }
+    function show(result) {
+      if (result.isError) {
+        canvas.hidden = true;
+        const error = result.content?.find(c => c.type === "text");
+        message(error?.text || "Could not read the document preview.", true);
+        return;
+      }
+      const image = result.content?.find(c => c.type === "image" && c.mimeType === "image/png");
+      if (!image) { canvas.hidden = true; message("The response contained no PNG preview.", true); return; }
+      const metadata = result.structuredContent || {};
+      title.textContent = metadata.document_name || "Krita document preview";
+      preview.alt = `Preview of ${title.textContent}`;
+      preview.src = `data:image/png;base64,${image.data}`;
+      canvas.hidden = false;
+      message(`${metadata.width || "?"} × ${metadata.height || "?"} px · Updated ${new Date().toLocaleTimeString()}`);
+      // A preview started without document_id continues to follow the active document.
+      // Explicit document IDs and cropped regions stay pinned through Refresh.
+    }
+    preview.addEventListener("error", () => {
+      canvas.hidden = true;
+      message("The PNG could not be displayed. Use a saved preview file in this client.", true);
+    });
+    button.addEventListener("click", async () => {
+      if (!connected || !canRefresh || busy) return;
+      busy = true; button.disabled = true;
+      canvas.hidden = true;
+      message("Refreshing…");
+      try { show(await request("tools/call", { name: "krita_preview", arguments: args })); }
+      catch (error) { message(error.message, true); }
+      finally { busy = false; button.disabled = !connected || !canRefresh; }
+    });
+    window.addEventListener("message", event => {
+      if (event.source !== window.parent) return;
+      const data = event.data;
+      if (!data || data.jsonrpc !== "2.0") return;
+      if (pending.has(data.id) && ("result" in data || "error" in data)) {
+        const call = pending.get(data.id);
+        clearTimeout(call.timer); pending.delete(data.id);
+        if (data.error) call.reject(new Error(data.error.message || "Preview request failed."));
+        else call.resolve(data.result);
+        return;
+      }
+      if (data.method === "ui/notifications/tool-input") setArguments(data.params?.arguments || {});
+      else if (data.method === "ui/notifications/tool-result") show(data.params || {});
+      else if (data.method === "ui/notifications/host-context-changed") hostContext(data.params);
+      else if (data.method === "ui/notifications/tool-cancelled") {
+        canvas.hidden = true; message(data.params?.reason || "Preview cancelled.", true);
+      } else if (data.method === "ping") send({ id: data.id, result: {} });
+      else if (data.method === "ui/resource-teardown") {
+        connected = false; button.disabled = true;
+        resizeObserver?.disconnect();
+        for (const call of pending.values()) {
+          clearTimeout(call.timer); call.reject(new Error("Preview closed."));
+        }
+        pending.clear();
+        send({ id: data.id, result: {} });
+      } else if (data.id !== undefined && data.method) {
+        send({ id: data.id, error: { code: -32601, message: "Method not found" } });
+      }
+    });
+    request("ui/initialize", {
+      protocolVersion: "2026-01-26",
+      appInfo: { name: "krita-document-preview", version: "1.0.0" },
+      appCapabilities: { availableDisplayModes: ["inline"] }
+    }).then(result => {
+      if (result.protocolVersion !== "2026-01-26") throw new Error("Unsupported preview protocol version.");
+      hostContext(result.hostContext);
+      connected = true;
+      canRefresh = Boolean(result.hostCapabilities?.serverTools);
+      button.disabled = !canRefresh;
+      notify("ui/notifications/initialized");
+      message("Waiting for document preview…");
+      if (typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(() => notify("ui/notifications/size-changed", {
+          height: document.body.scrollHeight
+        }));
+        resizeObserver.observe(document.body);
+      }
+    }).catch(error => message(error.message, true));
+  })();
+  </script>
+</body>
+</html>

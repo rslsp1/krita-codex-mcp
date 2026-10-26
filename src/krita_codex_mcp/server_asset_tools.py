@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import ImageContent, TextContent
+from mcp.types import CallToolResult
 from pydantic import Field
 
 from .bridge_client import BridgeCallError
@@ -48,7 +48,7 @@ def register_asset_tools(mcp: FastMCP, service: KritaService) -> None:
         spacing_y: Annotated[int, Field(ge=0, le=32768)] = 0,
         skip_empty: bool = False,
         name_prefix: str | None = None,
-    ) -> list[TextContent | ImageContent]:
+    ) -> CallToolResult:
         """Export a layer, animation, tileset, or named-region package with direct preview."""
         try:
             metadata, png_base64 = await service.asset(

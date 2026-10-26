@@ -5,6 +5,16 @@
 Control Krita from OpenAI Codex through a secure local
 Model Context Protocol (MCP) server for Windows and Linux.
 
+## RSL fork: document preview (unreleased)
+
+This fork integrates local changes on `rsl-master`; `main` follows the original project.
+Open contribution PRs against `rsl-master`. See [fork maintenance](docs/rsl-fork.md).
+
+The source version adds a refreshable document preview for MCP Apps hosts and an explicit
+PNG-file fallback for clients that do not display MCP images. These changes are not in the
+published PyPI package or its version-pinned marketplace launcher. See
+[preview usage and source setup](docs/document-preview.md) before trying this fork.
+
 [PyPI package](https://pypi.org/project/krita-codex-mcp/) ·
 [GitHub releases](https://github.com/cyyprezz/krita-codex-mcp/releases) ·
 [Windows installation guide](https://github.com/cyyprezz/krita-codex-mcp/blob/main/docs/windows-installation.md) ·
@@ -25,6 +35,7 @@ exposes a small set of cohesive tools instead of a large collection of micro-too
 |---|---|
 | `krita_state` | Active document, canvas/color space, recursive layer tree with UUIDs, active layer and current painting state |
 | `krita_preview` | Whole-canvas or pixel-precise cropped PNG returned directly as MCP image content |
+| `krita_preview_file` | Save the same preview as a PNG beneath an allowed root for local-file display |
 | `krita_canvas` | Sample colors; resize, scale, crop, rotate or flip; import editable raster layers |
 | `krita_edit` | Create/refine/move selections; native copy, cut, paste, selection-to-layer, fill and clear |
 | `krita_document` | Inspect runtime compatibility; list, create, open, activate, save and close documents |
@@ -159,7 +170,7 @@ checkout-specific alternative in the [Linux guide](https://github.com/cyyprezz/k
 ### Current Codex and MCP compatibility
 
 The compatibility check uses Codex CLI `0.163.0` (released 2026-10-15) against the built wheel and
-checks discovery of all 13 tools without an API key, model request or running Krita. See
+checks discovery of all 14 tools without an API key, model request or running Krita. See
 [the compatibility notes](https://github.com/cyyprezz/krita-codex-mcp/blob/main/docs/codex-compatibility.md) for its exact scope.
 
 This server intentionally stays on the MCP Python SDK 1.x maintenance line (`mcp<2`). Current Codex

@@ -7,9 +7,11 @@ from mcp.server.fastmcp import FastMCP
 from krita_codex_protocol import BridgeConfig, ConfigError
 
 from .bridge_client import BridgeClient
+from .preview_app import register_preview_app
 from .server_asset_tools import register_asset_tools
 from .server_core_tools import register_core_tools
 from .server_creation_tools import register_creation_tools
+from .server_preview_tools import register_preview_tools
 from .service import KritaService
 
 SERVER_INSTRUCTIONS = (
@@ -17,7 +19,11 @@ SERVER_INSTRUCTIONS = (
     "Call krita_state before mutating when layer IDs or canvas bounds may be stale. "
     "Read runtime_compatibility in krita_state and avoid tools or actions listed as affected "
     "when the running Krita build is limited. "
-    "Use krita_preview after visual changes. File writes are restricted to configured roots. "
+    "Use krita_preview after visual changes; supporting clients show a refreshable preview app. "
+    "If the user cannot see MCP images, use krita_preview_file with an allowed PNG destination "
+    "and embed the returned preview_path using the client's local-file image syntax. "
+    "Never output raw base64 or an empty image link. "
+    "File writes are restricted to configured roots. "
     "bridge_revision counts bridge mutations only, not manual edits in Krita."
 )
 
@@ -28,6 +34,8 @@ def build_server(config: BridgeConfig, client: BridgeClient | None = None) -> Fa
     register_core_tools(mcp, service)
     register_creation_tools(mcp, service)
     register_asset_tools(mcp, service)
+    register_preview_tools(mcp, service)
+    register_preview_app(mcp)
     return mcp
 
 

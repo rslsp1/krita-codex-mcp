@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import ImageContent, TextContent
+from mcp.types import CallToolResult
 from pydantic import Field
 
 from .bridge_client import BridgeCallError
 from .core_service import KritaService
+from .preview_app import PREVIEW_TOOL_META
 from .server_common import image_result, tool_call, tool_error
 from .validation import InputError
 
@@ -18,7 +19,10 @@ def register_core_tools(mcp: FastMCP, service: KritaService) -> None:
         """Read document/layers/painting state plus the running Krita compatibility report."""
         return await tool_call(lambda: service.state(document_id=document_id))
 
-    @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": False})
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": False},
+        meta=PREVIEW_TOOL_META,
+    )
     async def krita_preview(
         max_width: Annotated[int, Field(ge=64, le=4096)] = 1024,
         max_height: Annotated[int, Field(ge=64, le=4096)] = 1024,
@@ -28,7 +32,7 @@ def register_core_tools(mcp: FastMCP, service: KritaService) -> None:
         width: Annotated[int | None, Field(ge=1, le=32768)] = None,
         height: Annotated[int | None, Field(ge=1, le=32768)] = None,
         scale: Annotated[int, Field(ge=1, le=16)] = 1,
-    ) -> list[TextContent | ImageContent]:
+    ) -> CallToolResult:
         """Return a whole-canvas or pixel-precise cropped PNG preview as MCP image content."""
         try:
             metadata, png_base64 = await service.preview(

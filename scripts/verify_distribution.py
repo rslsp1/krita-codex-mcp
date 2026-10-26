@@ -52,6 +52,7 @@ def verify_wheel(path: Path) -> None:
         raise RuntimeError("Wheel contains a local user-home path")
     required = {
         "krita_codex_mcp/server.py",
+        "krita_codex_mcp/preview.html",
         "krita_codex_mcp/installer/cli.py",
         "krita_codex_mcp/_resources/krita_plugin/kritacodexbridge.desktop",
         "krita_codex_mcp/_resources/krita_plugin/kritacodexbridge/extension.py",
@@ -113,6 +114,7 @@ def verify_sdist(path: Path) -> None:
         "scripts/install.ps1",
         "server.json",
         "src/krita_codex_mcp/installer/cli.py",
+        "src/krita_codex_mcp/preview.html",
         "src/krita_codex_protocol/messages.py",
     }
     for suffix in suffixes:

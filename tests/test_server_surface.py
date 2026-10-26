@@ -29,14 +29,15 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self.temp.cleanup()
 
-    async def test_registers_exactly_the_thirteen_cohesive_tools(self) -> None:
+    async def test_registers_exactly_the_fourteen_cohesive_tools(self) -> None:
         tools = await self.server.list_tools()
-        self.assertEqual(len(tools), 13)
+        self.assertEqual(len(tools), 14)
         self.assertEqual(
             {tool.name for tool in tools},
             {
                 "krita_state",
                 "krita_preview",
+                "krita_preview_file",
                 "krita_canvas",
                 "krita_edit",
                 "krita_document",
@@ -53,12 +54,12 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_preview_returns_direct_image_content(self) -> None:
         result = await self.server.call_tool("krita_preview", {"max_width": 64, "max_height": 64})
-        content, structured = result
+        content, structured = result.content, result.structuredContent
         self.assertEqual(len(content), 2)
-        self.assertIsInstance(content[1], ImageContent)
-        self.assertEqual(content[1].mimeType, "image/png")
-        self.assertEqual(content[1].data, PNG_BASE64)
-        self.assertEqual(structured["result"][1]["type"], "image")
+        self.assertIsInstance(content[0], ImageContent)
+        self.assertEqual(content[0].mimeType, "image/png")
+        self.assertEqual(content[0].data, PNG_BASE64)
+        self.assertEqual(structured, {"width": 1, "height": 1})
 
     async def test_asset_export_returns_direct_image_content(self) -> None:
         result = await self.server.call_tool(
@@ -71,11 +72,11 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
                 "preview_max_height": 64,
             },
         )
-        content, structured = result
+        content, structured = result.content, result.structuredContent
         self.assertEqual(len(content), 2)
-        self.assertIsInstance(content[1], ImageContent)
-        self.assertEqual(content[1].mimeType, "image/png")
-        self.assertEqual(structured["result"][1]["type"], "image")
+        self.assertIsInstance(content[0], ImageContent)
+        self.assertEqual(content[0].mimeType, "image/png")
+        self.assertEqual(structured, {"width": 1, "height": 1})
 
     async def test_asset_schema_requires_layer_and_output_path(self) -> None:
         tools = {tool.name: tool for tool in await self.server.list_tools()}
@@ -174,6 +175,7 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
         for name in (
             "krita_state",
             "krita_preview",
+            "krita_preview_file",
             "krita_canvas",
             "krita_edit",
             "krita_layers",
