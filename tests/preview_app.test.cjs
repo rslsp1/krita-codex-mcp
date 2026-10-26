@@ -141,3 +141,26 @@ test("teardown cancels pending calls and disables refresh", async () => {
   assert.equal(a.timers.size, 0);
   assert.equal(a.messages.at(-1).id, "close");
 });
+
+test("side-panel launch fetches an initial image using supplied arguments", async () => {
+  const a = app();
+  await a.init();
+  a.receive({ method: "ui/notifications/tool-input", params: { arguments: { document_id: "doc-2" } } });
+  const initial = [...a.timers.values()][0]();
+  const request = a.messages.at(-1);
+  assert.equal(request.method, "tools/call");
+  assert.equal(request.params.arguments.document_id, "doc-2");
+  a.receive({ id: request.id, result: result("Side-panel document") });
+  await initial;
+  assert.equal(a.elements.get("title").textContent, "Side-panel document");
+  assert.equal(a.timers.size, 0);
+});
+
+test("a host-provided image cancels the initial side-panel fetch", async () => {
+  const a = app();
+  await a.init();
+  assert.equal(a.timers.size, 1);
+  a.receive({ method: "ui/notifications/tool-result", params: result() });
+  assert.equal(a.timers.size, 0);
+  assert.equal(a.messages.length, 2);
+});

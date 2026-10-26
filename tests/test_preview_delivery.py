@@ -53,12 +53,17 @@ class PreviewDeliveryTests(unittest.IsolatedAsyncioTestCase):
             tools = {t.name: t for t in (await client.list_tools()).tools}
             self.assertEqual(tools["krita_preview"].meta["ui"]["resourceUri"], PREVIEW_URI)
             self.assertEqual(tools["krita_preview"].meta["ui"]["visibility"], ["model", "app"])
+            self.assertEqual(tools["krita_preview"].title, "Krita document preview")
+            self.assertEqual(
+                tools["krita_preview"].meta["openai/ui"]["entrypoints"], [{"type": "thread"}]
+            )
             self.assertTrue(tools["krita_preview"].annotations.readOnlyHint)
             self.assertFalse(tools["krita_preview_file"].annotations.readOnlyHint)
             resources = (await client.list_resources()).resources
             resource = next(r for r in resources if str(r.uri) == PREVIEW_URI)
             self.assertEqual(resource.mimeType, PREVIEW_MIME_TYPE)
             self.assertEqual(resource.meta["ui"]["csp"]["connectDomains"], [])
+            self.assertEqual(resource.meta["openai/ui"]["preferredDisplayMode"], "fullscreen")
             html = (await client.read_resource(PREVIEW_URI)).contents[0]
             self.assertEqual(html.mimeType, PREVIEW_MIME_TYPE)
             self.assertIn("<title>Krita document preview</title>", html.text)

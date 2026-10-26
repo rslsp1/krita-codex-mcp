@@ -44,6 +44,7 @@
     let busy = false;
     let canRefresh = false;
     let resizeObserver;
+    let initialTimer;
 
     function send(message) { window.parent.postMessage({ jsonrpc: "2.0", ...message }, "*"); }
     function notify(method, params = {}) { send({ method, params }); }
@@ -71,6 +72,7 @@
       }
     }
     function show(result) {
+      clearTimeout(initialTimer);
       if (result.isError) {
         canvas.hidden = true;
         const error = result.content?.find(c => c.type === "text");
@@ -92,15 +94,17 @@
       canvas.hidden = true;
       message("The PNG could not be displayed. Use a saved preview file in this client.", true);
     });
-    button.addEventListener("click", async () => {
+    async function refresh() {
       if (!connected || !canRefresh || busy) return;
+      clearTimeout(initialTimer);
       busy = true; button.disabled = true;
       canvas.hidden = true;
       message("Refreshing…");
       try { show(await request("tools/call", { name: "krita_preview", arguments: args })); }
       catch (error) { message(error.message, true); }
       finally { busy = false; button.disabled = !connected || !canRefresh; }
-    });
+    }
+    button.addEventListener("click", refresh);
     window.addEventListener("message", event => {
       if (event.source !== window.parent) return;
       const data = event.data;
@@ -120,6 +124,7 @@
       } else if (data.method === "ping") send({ id: data.id, result: {} });
       else if (data.method === "ui/resource-teardown") {
         connected = false; button.disabled = true;
+        clearTimeout(initialTimer);
         resizeObserver?.disconnect();
         for (const call of pending.values()) {
           clearTimeout(call.timer); call.reject(new Error("Preview closed."));
@@ -133,7 +138,7 @@
     request("ui/initialize", {
       protocolVersion: "2026-01-26",
       appInfo: { name: "krita-document-preview", version: "1.0.0" },
-      appCapabilities: { availableDisplayModes: ["inline"] }
+      appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] }
     }).then(result => {
       if (result.protocolVersion !== "2026-01-26") throw new Error("Unsupported preview protocol version.");
       hostContext(result.hostContext);
@@ -142,6 +147,10 @@
       button.disabled = !canRefresh;
       notify("ui/notifications/initialized");
       message("Waiting for document preview…");
+      // A side-panel entrypoint can open the UI without a preceding tool call.
+      // Give the host time to deliver tool arguments/results, then fetch if needed.
+      // show() and manual refresh both cancel this initial read.
+      if (canRefresh) initialTimer = setTimeout(refresh, 500);
       if (typeof ResizeObserver !== "undefined") {
         resizeObserver = new ResizeObserver(() => notify("ui/notifications/size-changed", {
           height: document.body.scrollHeight

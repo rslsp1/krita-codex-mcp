@@ -10,6 +10,10 @@
    preview size, update time and a Refresh button. It uses the stable MCP Apps `2026-01-26`
    handshake and calls only the read-only `krita_preview` tool through the host. It has no CDN,
    external network requests, polling, bridge credentials or direct localhost access.
+   In hosts supporting OpenAI conversation-panel entrypoints, the thread's side-panel app menu
+   also lists **Krita document preview**. Open that entry to use a connected panel; opening the
+   HTML file directly in a browser does not establish an MCP connection. Panel launches read
+   the initial image automatically; Refresh then reads it again on demand.
 3. **PNG file:** `krita_preview_file` writes the same projection beneath a configured allowed
    root and returns its absolute `preview_path`. An agent can use a client's supported local-file
    image syntax to display it. This is useful when the client does not render MCP tool images.

@@ -20,6 +20,7 @@ def register_core_tools(mcp: FastMCP, service: KritaService) -> None:
         return await tool_call(lambda: service.state(document_id=document_id))
 
     @mcp.tool(
+        title="Krita document preview",
         annotations={"readOnlyHint": True, "openWorldHint": False},
         meta=PREVIEW_TOOL_META,
     )
