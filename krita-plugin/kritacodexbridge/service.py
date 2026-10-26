@@ -5,6 +5,8 @@ from typing import Any
 
 from krita_codex_protocol import BridgeConfig, PathPolicy
 
+from .ai_controller import AIController
+from .ai_diffusion_adapter import AIDiffusionAdapter
 from .animation_service import AnimationOperationsMixin
 from .asset_service import AssetOperationsMixin
 from .canvas_service import CanvasOperationsMixin
@@ -47,6 +49,7 @@ class KritaService(
         self.config = config
         self.path_policy = PathPolicy(config.allowed_roots)
         self.bridge_revision = 0
+        self._ai = AIController(AIDiffusionAdapter(self))
         self._document_ids: dict[int, str] = {}
         self._destructive_transform_documents: dict[str, str] = {}
         self._transform_mask_creation_counts: dict[str, int] = {}
@@ -56,6 +59,7 @@ class KritaService(
 
     def execute(self, operation: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         handlers = {
+            "ai": self._ai.execute,
             "state": self.state,
             "preview": self.preview,
             "canvas": self.canvas,
