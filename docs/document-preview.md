@@ -45,8 +45,16 @@ base64 into the final answer, invent a link, or claim successful remote display 
 
 These additions are unreleased. The existing marketplace manifest and generated installer
 configuration still select the original, version-pinned PyPI package. Merely cloning the fork
-does not activate its server. Keep the existing installed Krita bridge and its authenticated
-configuration; these changes require no new Krita plugin or bridge operation.
+does not activate its server. The server and installed Krita bridge must report the same exact
+distribution version (`0.2.2` for this source version). The preview feature adds no bridge
+operation, but an older bridge such as `0.2.0` still requires an update: the server deliberately
+rejects it with `BRIDGE_VERSION_MISMATCH` even when the protocol version matches.
+
+Before updating an older installation, save open documents and close Krita. Run the fork's
+`krita-codex-install update` using the same source environment or built wheel as the new server.
+This preserves the existing authenticated configuration, token, port and allowed roots. Run
+`krita-codex-install check --offline`, reopen Krita and complete its live check before switching
+the client launcher. Do not replace bridge files while Krita is running or bypass version checks.
 
 For local use after the PR is merged:
 
