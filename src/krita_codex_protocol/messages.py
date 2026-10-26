@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 PROTOCOL_VERSION = "1"
 ALLOWED_OPERATIONS = frozenset(
     {
+        "ai",
         "state",
         "preview",
         "canvas",

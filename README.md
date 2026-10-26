@@ -5,10 +5,14 @@
 Control Krita from OpenAI Codex through a secure local
 Model Context Protocol (MCP) server for Windows and Linux.
 
-## RSL fork: document preview (unreleased)
+## RSL fork: document preview and AI control (unreleased)
 
 This fork integrates local changes on `rsl-master`; `main` follows the original project.
 Open contribution PRs against `rsl-master`. See [fork maintenance](docs/rsl-fork.md).
+
+The source also adds six optional AI Diffusion control tools: status, managed server control,
+model/style catalog, generation, job tracking, and result preview/application. Results always
+create new layers. See [AI Diffusion control](docs/ai-diffusion.md) for requirements and limits.
 
 The source version adds a refreshable document preview for MCP Apps hosts and an explicit
 PNG-file fallback for clients that do not display MCP images. These changes are not in the

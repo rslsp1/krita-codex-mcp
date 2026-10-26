@@ -15,7 +15,9 @@ PNG_BASE64 = "iVBORw0KGgpwYXlsb2Fk"
 
 class _FakeBridgeClient:
     async def execute(self, operation: str, _arguments: dict[str, Any]) -> dict[str, Any]:
-        if operation in {"preview", "asset"}:
+        if operation in {"preview", "asset"} or (
+            operation == "ai" and _arguments.get("action") == "preview"
+        ):
             return {"png_base64": PNG_BASE64, "width": 1, "height": 1}
         return {"operation": operation}
 
@@ -29,9 +31,9 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self.temp.cleanup()
 
-    async def test_registers_exactly_the_fourteen_cohesive_tools(self) -> None:
+    async def test_registers_exactly_the_twenty_cohesive_tools(self) -> None:
         tools = await self.server.list_tools()
-        self.assertEqual(len(tools), 14)
+        self.assertEqual(len(tools), 20)
         self.assertEqual(
             {tool.name for tool in tools},
             {
@@ -49,8 +51,27 @@ class ServerSurfaceTests(unittest.IsolatedAsyncioTestCase):
                 "krita_color",
                 "krita_asset",
                 "krita_save_export",
+                "krita_ai_status",
+                "krita_ai_server",
+                "krita_ai_catalog",
+                "krita_ai_generate",
+                "krita_ai_jobs",
+                "krita_ai_result",
             },
         )
+
+    async def test_ai_schema_and_preview_use_bounded_explicit_operations(self):
+        tools = {tool.name: tool for tool in await self.server.list_tools()}
+        required = tools["krita_ai_generate"].inputSchema["required"]
+        for field in ("document_id", "prompt", "style_id", "request_key"):
+            self.assertIn(field, required)
+        actions = tools["krita_ai_result"].inputSchema["properties"]["action"]["enum"]
+        self.assertEqual(actions, ["read", "preview", "apply_new_layers"])
+        result = await self.server.call_tool(
+            "krita_ai_result", {"action": "preview", "operation_id": "test-op"}
+        )
+        self.assertIsInstance(result.content[0], ImageContent)
+        self.assertNotIn("png_base64", result.structuredContent)
 
     async def test_preview_returns_direct_image_content(self) -> None:
         result = await self.server.call_tool("krita_preview", {"max_width": 64, "max_height": 64})

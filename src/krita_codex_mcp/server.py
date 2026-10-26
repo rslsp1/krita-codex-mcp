@@ -8,6 +8,7 @@ from krita_codex_protocol import BridgeConfig, ConfigError
 
 from .bridge_client import BridgeClient
 from .preview_app import register_preview_app
+from .server_ai_tools import register_ai_tools
 from .server_asset_tools import register_asset_tools
 from .server_core_tools import register_core_tools
 from .server_creation_tools import register_creation_tools
@@ -32,6 +33,7 @@ def build_server(config: BridgeConfig, client: BridgeClient | None = None) -> Fa
     service = KritaService(config, client or BridgeClient(config))
     mcp = FastMCP("krita-codex-mcp", instructions=SERVER_INSTRUCTIONS)
     register_core_tools(mcp, service)
+    register_ai_tools(mcp, service)
     register_creation_tools(mcp, service)
     register_asset_tools(mcp, service)
     register_preview_tools(mcp, service)

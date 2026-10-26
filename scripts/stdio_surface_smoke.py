@@ -27,6 +27,12 @@ EXPECTED_TOOLS = {
     "krita_color",
     "krita_asset",
     "krita_save_export",
+    "krita_ai_status",
+    "krita_ai_server",
+    "krita_ai_catalog",
+    "krita_ai_generate",
+    "krita_ai_jobs",
+    "krita_ai_result",
 }
 
 
