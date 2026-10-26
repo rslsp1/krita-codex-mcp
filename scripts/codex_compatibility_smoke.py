@@ -180,7 +180,9 @@ async def smoke(wheel: Path) -> None:
                 logs = "Codex diagnostic stream did not close after shutdown."
             if failed or process.returncode not in (0, None):
                 print(logs[-4000:])
-    print("Codex compatibility: generated config, plugin commands and 13 MCP tools verified")
+    print(
+        f"Codex compatibility: config, plugin commands and {len(EXPECTED_TOOLS)} MCP tools verified"
+    )
 
 
 def main() -> None:

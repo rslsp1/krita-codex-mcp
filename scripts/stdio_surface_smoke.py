@@ -15,6 +15,7 @@ from mcp.client.stdio import stdio_client
 EXPECTED_TOOLS = {
     "krita_state",
     "krita_preview",
+    "krita_preview_file",
     "krita_canvas",
     "krita_edit",
     "krita_document",
@@ -66,7 +67,7 @@ async def smoke(wheel: Path, *, offline: bool) -> None:
     names = {tool.name for tool in tools.tools}
     if names != EXPECTED_TOOLS:
         raise RuntimeError(f"Unexpected MCP tool surface: {sorted(names)}")
-    print("Local wheel STDIO smoke: 13 tools")
+    print(f"Local wheel STDIO smoke: {len(EXPECTED_TOOLS)} tools")
 
 
 def main() -> None:

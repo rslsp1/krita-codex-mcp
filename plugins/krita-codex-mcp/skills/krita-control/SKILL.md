@@ -54,3 +54,18 @@ become responsive, then inspect with `krita_state` and `krita_preview` before de
 
 Verify the final visible result with `krita_preview`. When saving or exporting, report the exact
 paths returned by the tool and distinguish a saved KRA checkpoint from derived PNG or asset output.
+
+### Display a preview to the user
+
+`krita_preview` returns PNG image content and, on compatible hosts, a refreshable MCP Apps view.
+Seeing the image yourself does not prove the user's client displayed it. If the user cannot see
+it, call `krita_preview_file` with a PNG destination beneath an existing allowed root. This only
+writes a preview file; it does not edit or save the document. Preserve `overwrite=false` unless
+replacement of that exact file was authorized.
+
+Embed the returned `preview_path` with the host's supported local-file image syntax, for example
+`![Krita document preview](/absolute/path/preview.png)` in clients supporting local Markdown images.
+The file is on the MCP server computer. If the client/agent uses another filesystem, use an
+available file transfer or path mapping; do not invent one or widen allowed roots. Never paste
+raw base64, an empty `data:` URL, or a Markdown image without an actual destination. Explain a
+client display limitation if no supported delivery path is available.

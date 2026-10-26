@@ -8,7 +8,7 @@ Krita Codex MCP is a local STDIO MCP server. Codex launches it as a child proces
 talks to the authenticated Krita plugin over loopback. The loopback bridge is an internal JSON
 API, not a remote MCP endpoint. Codex and Krita must run on the same computer.
 
-The repository uses the MCP Python SDK 1.x maintenance line (`mcp>=1.12,<2`, locked to `1.28.1`).
+The repository uses the MCP Python SDK 1.x maintenance line (`mcp>=1.28.1,<2`, locked to `1.28.1`).
 This intentionally retains its `FastMCP` API and legacy initialization handshake. Codex CLI
 `0.163.0` retains that handshake for STDIO servers without the modern-protocol opt-in. No modern
 protocol opt-in is needed in the provided configurations.
@@ -47,7 +47,7 @@ profile, this checks:
 
 - the actual CLI accepts the installer-generated MCP configuration;
 - the documented plugin and marketplace commands exist;
-- Codex starts the built STDIO server and discovers exactly the project's 13 tools.
+- Codex starts the built STDIO server and discovers exactly the fork's 14 tools.
 
 The Ubuntu run uses a custom `XDG_CONFIG_HOME` passed through `env_vars`, so discovery also proves
 that the server reads the forwarded Linux configuration path. It uses the environment and timeout
@@ -58,6 +58,11 @@ The test uses the app-server discovery endpoint only as a diagnostic client. It 
 model turn, require an API key or change a personal Codex profile. It does not exercise painting,
 GUI plugin installation or a live Krita process. Run the installer's live preflight on the actual
 Krita build before productive use.
+
+The fork's preview UI uses the optional MCP Apps `2026-01-26` extension. The SDK minimum now
+matches the locked release used for tool/resource metadata. Clients without MCP Apps still
+receive standard PNG `ImageContent`; interactive display on a particular desktop or mobile
+client is not guaranteed by tool discovery. See [document preview](document-preview.md).
 
 ## Official references
 

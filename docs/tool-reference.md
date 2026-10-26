@@ -60,6 +60,18 @@ nearest-neighbor sampling, while `max_width` and `max_height` remain hard output
 Preview waits for pending Krita work and refreshes the projection so visibility and reorder changes
 are reflected before rendering. Preview and asset responses are size-limited, validated PNGs.
 
+Preview and asset tools return an explicit `CallToolResult`: PNG image first, textual metadata
+second, and metadata only in `structuredContent` (no duplicate base64 image). `krita_preview`
+also advertises a self-contained MCP Apps UI with a manual Refresh button. Refresh repeats the
+original document/region arguments and only reads the projection. Without an explicit document
+ID it follows the currently active document.
+
+`krita_preview_file` accepts a required absolute `.png` `output_path`, `overwrite=false`, and
+the same document/region/size parameters as `krita_preview`. It writes a validated preview beneath
+an allowed root and returns `preview_path`; it never saves or edits the Krita document. The tool
+is annotated as writing because it creates a file. Ordinary `krita_preview` remains read-only
+and never writes a file. See [document preview](document-preview.md) for client display limits.
+
 `canvas` supports `read`, `sample_color`, `resize`, `scale`, `crop`, `rotate`, `flip`, and
 `import_layer`. Color sampling reads one composited projection pixel and returns RGBA plus
 `#RRGGBBAA`. Canvas resize uses one of nine explicit anchors; image scaling accepts only a strategy

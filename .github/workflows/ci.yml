@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - rsl-master
   pull_request:
 
 permissions:
@@ -39,6 +40,7 @@ jobs:
           $env:PYTHONPATH = "src"
           python scripts/verify_release.py
           python -m unittest discover -s tests -v
+          node --test tests/preview_app.test.cjs
           ruff check .
           python -m build
 
